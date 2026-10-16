@@ -1,18 +1,35 @@
 import { useEffect, useState } from "react";
 
-function Dashboard({ sales, expenses, profit }) {
+function Dashboard() {
     const [products, setProducts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         fetch("http://localhost:3000/api/products")
-            .then((response) => response.json())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error("Failed to load products");
+                }
+
+                return response.json();
+            })
             .then((data) => {
                 setProducts(data);
+            })
+            .catch((error) => {
+                console.error(error);
+                setError("Could not load inventory information.");
+            })
+            .finally(() => {
+                setLoading(false);
             });
     }, []);
 
     const lowStock = products.filter(
-        (product) => product.stock <= product.restockLevel && product.stock > 0
+        (product) =>
+            product.stock > 0 &&
+            product.stock <= product.restockLevel
     );
 
     const outOfStock = products.filter(
@@ -20,63 +37,80 @@ function Dashboard({ sales, expenses, profit }) {
     );
 
     return (
-        <main>
-            <h1>Dashboard</h1>
+        <main className="dashboard">
+            <div className="dashboard-heading">
+                <div>
+                    <h1>Home</h1> <br />
+                    <p>Here's a quick overview of your business.</p>
+                </div>
+            </div>
 
-            <h2>Good afternoon 👋</h2>
-            <p>Here's how your business is doing today.</p>
+            <section className="dashboard-grid">
+                <article className="dashboard-card">
+                    <p>Total Products</p>
+                    <h2>{loading ? "..." : products.length}</h2>
+                    <span>Products in inventory</span>
+                </article>
 
-            <section>
-                <h3>Today's Sales</h3>
-                <p>KSh {sales}</p>
+                <article className="dashboard-card">
+                    <p>Low Stock</p>
+                    <h2>{loading ? "..." : lowStock.length}</h2>
+                    <span>Products needing restocking</span>
+                </article>
+
+                <article className="dashboard-card">
+                    <p>Out of Stock</p>
+                    <h2>{loading ? "..." : outOfStock.length}</h2>
+                    <span>Products unavailable</span>
+                </article>
+
+                <article className="dashboard-card">
+                    <p>Inventory Status</p>
+                    <h2>
+                        {loading
+                            ? "..."
+                            : outOfStock.length === 0 &&
+                                lowStock.length === 0
+                                ? "Good"
+                                : "Attention"}
+                    </h2>
+                    <span>Based on current stock levels</span>
+                </article>
             </section>
 
-            <section>
-                <h3>Today's Expenses</h3>
-                <p>KSh {expenses}</p>
-            </section>
+            <section className="dashboard-section">
+                <h2>Business Alerts</h2>
 
-            <section>
-                <h3>Estimated Profit</h3>
-                <p>KSh {profit}</p>
-            </section>
+                {loading && <p>Loading inventory information...</p>}
 
-            <section>
-                <h3>Stock Overview</h3>
+                {error && <p>{error}</p>}
 
-                <p>Total Products: {products.length}</p>
+                {!loading && !error && (
+                    <>
+                        {outOfStock.length === 0 && lowStock.length === 0 ? (
+                            <p>All products are sufficiently stocked.</p>
+                        ) : (
+                            <ul className="alert-list">
+                                {outOfStock.map((product) => (
+                                    <li key={product.id}>
+                                        <strong>{product.name}</strong>
+                                        {" "}is out of stock.
+                                    </li>
+                                ))}
 
-                <h4>Products Requiring Restocking</h4>
-
-                {lowStock.length > 0 ? (
-                    <ul>
-                        {lowStock.map((product) => (
-                            <li key={product.id}>
-                                {product.name} — {product.stock} left
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No products currently require restocking.</p>
-                )}
-
-                <h4>Out of Stock</h4>
-
-                {outOfStock.length > 0 ? (
-                    <ul>
-                        {outOfStock.map((product) => (
-                            <li key={product.id}>
-                                {product.name} — Out of stock
-                            </li>
-                        ))}
-                    </ul>
-                ) : (
-                    <p>No products are out of stock.</p>
+                                {lowStock.map((product) => (
+                                    <li key={product.id}>
+                                        <strong>{product.name}</strong>
+                                        {" "}has only {product.stock} units left.
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                    </>
                 )}
             </section>
         </main>
     );
 }
- 
-export default Dashboard;
 
+export default Dashboard;
