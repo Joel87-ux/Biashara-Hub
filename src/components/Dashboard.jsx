@@ -40,7 +40,7 @@ function Dashboard() {
         <main className="dashboard">
             <div className="dashboard-heading">
                 <div>
-                    <h1>Home</h1> <br />
+                    <h1>Dashboard</h1> <br />
                     <p>Here's a quick overview of your business.</p>
                 </div>
             </div>
